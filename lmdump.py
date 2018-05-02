@@ -57,17 +57,17 @@ def main():
                     elif chunk == bytes.fromhex('0000F024'):
                         graphic_list = graphic(fp, fpw)
 
-                    elif chunk == bytes.fromhex('0000F037'):
-                        color_matrix_list = color_matrix(fp, fpw)
-
                     elif chunk == bytes.fromhex('0000F103'):
                         positions_list = positions(fp, fpw)
 
                     elif chunk == bytes.fromhex('00000025'):
                         Dynamic_text_list = dynamic_text(fp, fpw)
 
+                    elif chunk == bytes.fromhex('00000027'):
+                        Dynamic_text_list = alt_(fp, fpw)
+
                     else:
-                        fpw.writelines(["\nsomething broke at the below address: \n", format((fp.tell() - 0x4), "<8X")])
+                        fpw.writelines(["\nsomething broke at the below address in main: \n", format((fp.tell() - 0x4), "<8X")])
                         fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
                         fpw.writelines(["\n", str(chunk)])
                         exit()
@@ -342,7 +342,9 @@ def defines(fp, fpw):
             shape_list = shape(fp, fpw, shape_count)
             shape_count += 1
         else:
-            fpw.writelines(["\nSomething broke here"])
+            fpw.writelines(["\nsomething broke at the below address in defines (shapes): \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
 
     fpw.writelines(["\n\t}\n\n\tSprites\n\t{"])
             
@@ -352,7 +354,9 @@ def defines(fp, fpw):
             sprite_list = sprite(fp, fpw, sprite_count)
             sprite_count += 1
         else:
-            fpw.writelines(["\nSomething broke here"])
+            fpw.writelines(["\nsomething broke at the below address in defines (sprites): \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
             
     fpw.writelines(["\n\t}\n}"])
     
@@ -382,7 +386,9 @@ def shape(fp, fpw, x):
         if chunk == bytes.fromhex('0000F024'):
             graphic_list = graphic(fp, fpw, x)
         else:
-            fpw.writelines(["\nYou're fucked in shape", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\nsomething broke at the below address in shape: \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
     
 
     fpw.writelines(["\n\t\t\t}\n\t\t}"])
@@ -454,8 +460,9 @@ def sprite(fp, fpw, x):
         elif chunk == bytes.fromhex('0000F105'):
             key_frame(fp, fpw)
         else:
-            fpw.writelines(["\nsprite broke at:", format((fp.tell() - 0x4), ">4X")])
-            fpw.writelines(["\n", format(int.from_bytes(chunk, "big"), "0>8X")])
+            fpw.writelines(["\nsomething broke at the below address in sprite: \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
     fpw.writelines(["\n\t\t\t}\n\t\t}"])
 
 def frame_label(fp, fpw):
@@ -487,18 +494,19 @@ def show_frame(fp, fpw):
         elif chunk == bytes.fromhex('00000005'):
             remove_object(fp, fpw)
         else:
-            fpw.writelines(["\nshow frame broke at:", format((fp.tell() - 0x4), ">4X")])
-            fpw.writelines(["\n", format(int.from_bytes(chunk, "big"), "0>8X")])
+            fpw.writelines(["\nsomething broke at the below address in show frame: \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
     fpw.writelines(["\n\t\t\t\t\t}\n\t\t\t\t}"])
 
 def key_frame(fp, fpw):
-    fpw.writelines(["\n\t\t\tKey frame # offset: 0x", format((fp.tell() - 0x4), ">4X"), "\n\t\t\t\t{"])
+    fpw.writelines(["\n\t\t\t\tKey frame # offset: 0x", format((fp.tell() - 0x4), ">4X"), "\n\t\t\t\t{"])
     dword_length = int.from_bytes(fp.read(4), "big")
     unk0 = int.from_bytes(fp.read(4), "big")
     num_items = int.from_bytes(fp.read(4), "big")
 
-    fpw.writelines(["\n\t\t\t\tUnk0: 0x", format(unk0, "0>8X")])
-    fpw.writelines(["\n\t\t\t\tnum_items: 0x", format(num_items, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\tUnk0: 0x", format(unk0, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\tnum_items: 0x", format(num_items, "0>8X")])
     fpw.writelines(["\n\t\t\t\t\t{"])
     
     for x in range(num_items):
@@ -508,8 +516,9 @@ def key_frame(fp, fpw):
         elif chunk == bytes.fromhex('0000000C'):
             do_action(fp, fpw)
         else:
-            fpw.writelines(["\nkey frame broke at:", format((fp.tell() - 0x4), ">4X")])
-            fpw.writelines(["\n", format(int.from_bytes(chunk, "big"), "0>8X")])
+            fpw.writelines(["\nsomething broke at the below address in key frame: \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
     
     fpw.writelines(["\n\t\t\t\t\t}\n\t\t\t\t}"])
 
@@ -552,30 +561,40 @@ def place_object(fp, fpw):
         
     fpw.writelines(["\n\t\t\t\t\t\t\tCharacter ID: 0x", format(chr_id, "0>8X")])
     fpw.writelines(["\n\t\t\t\t\t\t\tPlacement ID: 0x", format(placement_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tunk0: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tName ID: 0x", format(chr_id, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tunk0: 0x", format(unk0, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tName ID: 0x", format(name_id, "0>8X")])
     fpw.writelines(["\n\t\t\t\t\t\t\tPlace Flag: ", place_type])
-    fpw.writelines(["\n\t\t\t\t\t\t\tBlend Mode: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tDepth: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tunk1: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tunk2: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tunk3: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tposition_flags: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tposition_id: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tcolor_mult_id: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\tcolor_add_id: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\thas_color_matrix: 0x", format(chr_id, "0>8X")])
-    fpw.writelines(["\n\t\t\t\t\t\t\thas_add_id: 0x", format(chr_id, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tBlend Mode: 0x", format(blend_mode, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tDepth: 0x", format(depth, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tunk1: 0x", format(unk1, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tunk2: 0x", format(unk2, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tunk3: 0x", format(unk3, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tposition_flags: 0x", format(position_flags, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tposition_id: 0x", format(position_id, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tcolor_mult_id: 0x", format(color_mult_id, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\tcolor_add_id: 0x", format(color_add_id, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\thas_color_matrix: 0x", format(has_color_matrix, "0>8X")])
+    fpw.writelines(["\n\t\t\t\t\t\t\thas_unk_f014: 0x", format(has_unk_f014, "0>8X")])
     
     fpw.writelines(["\n\t\t\t\t\t\t}"])
-
-def remove_object(fp, fpw):
-    dword_length = int.from_bytes(fp.read(4), "big")
-    unk0 = int.from_bytes(fp.read(4), "big")
-    id = int.from_bytes(fp.read(2), "big")
-    unk1 = int.from_bytes(fp.read(2), "big")
     
-    fpw.writelines(["\n\t\t\t\t\t\tRemove object\n\t\t\t\t\t\t\tUnk0: ", str(unk0), "ID: ", str(id), "unk1: ", str(unk1)])
+    if has_color_matrix != 0:
+        chunk = fp.read(4)
+        if chunk == bytes.fromhex('0000F037'):
+            color_matrix_list = color_matrix(fp, fpw)
+        else:
+            fpw.writelines(["\nsomething broke at the below address in place object (color matrix): \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
+            
+    if has_unk_f014 != 0:
+        chunk = fp.read(4)
+        if chunk == bytes.fromhex('0000F037'):
+            unk_f014 = unknowns(fp, fpw, "F014")
+        else:
+            fpw.writelines(["\nsomething broke at the below address in place object (f014): \n", format((fp.tell() - 0x4), "<8X")])
+            fpw.writelines(["\n", format((int.from_bytes(chunk, "big")), "0>8X")])
+            fpw.writelines(["\n", str(chunk)])
 
 def color_matrix(fp, fpw):
     fpw.writelines(["\n\nColor_matrix (WIP) # offset: 0x", format((fp.tell() - 0x4), "<8X"), "\n\t{"])
@@ -592,6 +611,14 @@ def color_matrix(fp, fpw):
             fpw.writelines(["\n\t\tunk_", str(x), ": 0x", format(unk, "0>8X")])
             type_list.append(unk)
     fpw.writelines(["\n\t}"])
+
+def remove_object(fp, fpw):
+    dword_length = int.from_bytes(fp.read(4), "big")
+    unk0 = int.from_bytes(fp.read(4), "big")
+    id = int.from_bytes(fp.read(2), "big")
+    unk1 = int.from_bytes(fp.read(2), "big")
+    
+    fpw.writelines(["\n\t\t\t\t\t\tRemove object\n\t\t\t\t\t\t\tUnk0: ", str(unk0), "ID: ", str(id), "unk1: ", str(unk1)])
 
 def dynamic_text(fp, fpw):
     fpw.writelines(["\n\nDynamic Text # offset: 0x", format((fp.tell() - 0x4), "<8X"), "\n{"])
