@@ -148,23 +148,11 @@ def symbols(fp, fpw):
         if str_len == 0:
             str_len = integer(fp)
 
-        string = []
-        x = 0
-        while x < str_len:
-            try:
-                string.append(fp.read(1).decode("utf-8"))
-                x += 1
-                actual_str_len += 1
-            except:
-                fp.seek(-1, 1)
-                item = int.from_bytes(fp.read(3), "big")
-                string.append(format(item, "X"))
-                x += 3
-                actual_str_len += 6
+        string = str(fp.read(str_len))
         if longest < actual_str_len:
             longest = actual_str_len
 
-        symbol_list.append(''.join(string))
+        symbol_list.append(string[2:(len(string) - 1)])
         counter += 1
 
     for x in range(len(symbol_list)):

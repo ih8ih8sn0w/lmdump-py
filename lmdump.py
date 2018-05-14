@@ -148,23 +148,11 @@ def symbols(fp, fpw):
         if str_len == 0:
             str_len = integer(fp)
 
-        string = []
-        x = 0
-        while x < str_len:
-            try:
-                string.append(fp.read(1).decode("utf-8"))
-                x += 1
-                actual_str_len += 1
-            except:
-                fp.seek(-1, 1)
-                item = int.from_bytes(fp.read(3), "big")
-                string.append(format(item, "X"))
-                x += 3
-                actual_str_len += 6
+        string = str(fp.read(str_len))
         if longest < actual_str_len:
             longest = actual_str_len
 
-        symbol_list.append(''.join(string))
+        symbol_list.append(string[2:(len(string) - 1)])
         counter += 1
 
     for x in range(len(symbol_list)):
@@ -544,7 +532,7 @@ def shape(fp, fpw, x, symbol_list, atlas_list, offset):
         chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
         if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t; ref in Shape: " + str(x))
+            symbol_list[chr_id].append("\n\t\t# ref in Shape: " + str(x))
     except:
         print("Invalid chr_id:", str(chr_id), "found in shape:", str(x))
         chr_str = "Invalid ID"
@@ -627,7 +615,7 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
         chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
         if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t; ref in Sprite: " + str(x))
+            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(x))
     except:
         print("Invalid chr_id:", str(chr_id), "found at sprite:", str(x))
         chr_str = "Invalid ID"
@@ -790,17 +778,17 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         place_type = "Move"
     else:
         place_type = "Unknown " + str(place_flag)
-
-    chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
-    chr_str = chr_str_unformatted[0].strip()
-    if chr_id > 1:
-        symbol_list[chr_id].append("\n\t\t; ref in Sprite: " + str(sprite_num) + " Place Object: " + str(x))
-    # except:
-        # print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", sprite_num)
-        # chr_str = "Invalid ID"
+    try:
+        chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
+        chr_str = chr_str_unformatted[0].strip()
+        if chr_id > 1:
+            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(sprite_num) + " Place Object: " + str(x))
+    except:
+        print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", sprite_num)
+        chr_str = "Invalid ID"
 
     try:
-        positions_list[position_id] += ("; ref in", frame + ": " + str(count) + " Place Object: " + str(x))
+        positions_list[position_id] += ("# ref in", frame + ": " + str(count) + " Place Object: " + str(x))
     except IndexError:
         print("Invalid position ID found:", position_id, "; " + frame + ":", count, "Sprite:", str(sprite_num))
         pass
@@ -904,7 +892,7 @@ def dynamic_text(fp, fpw, x, symbol_list, offset):
         chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
         if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t; ref in Dynamic Text: " + str(x))
+            symbol_list[chr_id].append("\n\t\t# ref in Dynamic Text: " + str(x))
     except:
         print("Invalid chr_id:", str(chr_id), "found at Dynamic Text:", str(x))
         chr_str = "Invalid ID"
