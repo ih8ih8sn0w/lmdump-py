@@ -31,6 +31,10 @@ def main():
                         transforms_offset = offset
                         transforms_list, transforms_list_offset = transforms(fp, fpw)
 
+                    elif chunk == bytes.fromhex('0000F103'):
+                        positions_offset = offset
+                        positions_list = positions(fp, fpw)
+
                     elif chunk == bytes.fromhex('0000F004'):
                         bounds_offset = offset
                         bounds_list = bounds(fp, fpw)
@@ -70,10 +74,6 @@ def main():
                     elif chunk == bytes.fromhex('0000F00D'):
                         defines_offset = offset
                         an_actual_nightmare = defines(fp, fpw, symbol_list, atlas_list, positions_list, defines_offset)
-
-                    elif chunk == bytes.fromhex('0000F103'):
-                        positions_offset = offset
-                        positions_list = positions(fp, fpw)
 
                     else:
                         print("something broke at the below address in main: \n", format((fp.tell() - 0x4), "0>8X"))
@@ -167,7 +167,7 @@ def symbol_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["Symbols # Offset: 0x", str(offset), ref_str_open])
+    fpw.writelines(["Symbols # Offset: 0x", str(format(offset, "0>8X")), ref_str_open])
     for x in range(len(l)):
         fpw.writelines(l[x])
         fpw.writelines(ref_str_close)
@@ -182,12 +182,12 @@ def colors(fp, fpw):
     color_offset = []
     
     while counter < int(num_colors):
-        color_offset.append("0x" + ''.join(format((fp.tell()), "<X")))
+        color_offset.append("0x" + ''.join(format((fp.tell()), ">X")))
         r = short(fp)
         g = short(fp)
         b = short(fp)
         a = short(fp)
-        color_list.append([["0x" + format(r, "0^4X"), "0x" + format(g, "0^4X"), "0x" + format(b, "0^4X"), "0x" + format(a, "0^4X")], ""])
+        color_list.append(["0x" + format(r, "0>4X"), "0x" + format(g, "0>4X"), "0x" + format(b, "0>4X"), "0x" + format(a, "0>4X")])
         counter += 1
     for x in range(len(color_list)):
         color_list[x] = (["\n\t", str(color_list[x]).replace("'", ""), " # 0x",format(x, "0>4X"), "; Offset: ", color_offset[x]])
@@ -201,9 +201,8 @@ def colors_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\nColors # offset: 0x", str(offset), "\n["])
-    for x in range(len(l)):
-        fpw.writelines(l[x])
+    fpw.writelines(["\n\nColors # offset: 0x", str(format(offset, "0>8X")), "\n["])
+    everything_else_write(l, fpw)
     fpw.writelines(["\n]"])
 
 def transforms(fp, fpw):
@@ -220,7 +219,7 @@ def transforms(fp, fpw):
         for nani in range(3):
             x = floating(fp)
             y = floating(fp)
-            temp = [float(format(x[0], "4.2F")), float(format(y[0], "4.2F"))]
+            temp = [float(format(x[0], ".10F")), float(format(y[0], ".10F"))]
             transforms_piece.append(temp)
         transforms_list.append(transforms_piece)
         counter += 1
@@ -237,14 +236,14 @@ def transforms_write(l, offset, fpw, list_offset):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\n\nTransforms # offset: 0x", str(offset), "\n["])
+    fpw.writelines(["\n\nTransforms # offset: 0x", str(format(offset, "0>8X")), "\n["])
     for z in range(len(l)):
-        fpw.writelines(["\n\n\t[ # 0x",format(z, "0>4X"), "; Offset: ", list_offset[z]])
+        fpw.writelines(["\n\t[ # 0x",format(z, "0>4X"), "; Offset: ", list_offset[z]])
         fpw.writelines(l[z])
         if not (z + 1) == len(l):
-            fpw.writelines(["\n\t],"])
+            fpw.writelines(["\n\t],\n"])
         else:
-            fpw.writelines(["\n\t]\n]"])
+            fpw.writelines(["\n\t]\n\n]"])
 
 def positions(fp, fpw):
     dword_length = integer(fp)
@@ -254,10 +253,10 @@ def positions(fp, fpw):
     counter = 0
 
     while counter < num_positions:
-        positions_offset.append("0x" + ''.join(format((fp.tell()), "<X")))
+        positions_offset.append("0x" + ''.join(format((fp.tell()), "0>8X")))
         x = floating(fp)
         y = floating(fp)
-        temp = [float(format(x[0], "4.2F")), float(format(y[0], "4.2F"))]
+        temp = [float(format(x[0], ".10F")), float(format(y[0], ".10F"))]
         positions_list.append(temp)
         counter += 1
 
@@ -278,7 +277,7 @@ def positions_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\n\nPositions # offset: 0x", str(offset), "\n["])
+    fpw.writelines(["\n\nPositions # offset: 0x", str(format(offset, "0>8X")), "\n["])
     for x in range(len(l)):
         fpw.writelines(l[x])
     fpw.writelines(["\n]"])
@@ -296,7 +295,7 @@ def bounds(fp, fpw):
         top = floating(fp)
         right = floating(fp)
         bottom = floating(fp)
-        temp = [float(format(left[0], "4.2F")), float(format(top[0], "4.2F")), float(format(right[0], "4.2F")), float(format(bottom[0], "4.2F"))]
+        temp = [float(format(left[0], ".10F")), float(format(top[0], ".10F")), float(format(right[0], ".10F")), float(format(bottom[0], ".10F"))]
         counter += 1
         bounds_list.append(temp)
 
@@ -317,7 +316,7 @@ def bounds_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\n\nBounds # offset: 0x", str(offset), "\n["])
+    fpw.writelines(["\n\nBounds # offset: 0x", str(format(offset, "0>8X")), "\n["])
     for x in range(len(l)):
         fpw.writelines(l[x])
     fpw.writelines(["\n]"])
@@ -325,7 +324,7 @@ def bounds_write(l, offset, fpw):
 def actionscript(fp, fpw):
     dword_length = integer(fp)
     num_scripts = integer(fp)
-    items = []
+    items = [str(num_scripts)]
     for x in range(dword_length - 1):
         items.append(format(integer(fp), "0>8X"))
     return items
@@ -338,16 +337,17 @@ def actionscript_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\n\nActionScript # offset: 0x", str(offset), "\n{"])
+    fpw.writelines(["\n\nActionScript # offset: 0x", str(format(offset, "0>8X")), "\n{"])
     fpw.writelines(["\nTO DO: https://globeriz.blogspot.com/2014/01/flash-vm-instruction-reference.html MAKE THIS WORK\n\n"])
+    fpw.writelines(["Number of scripts: ", l[0], "\n"])
     counter = 0
-    for x in range(len(l)):
-        if counter != 16:
+    for x in range(1, len(l)):
+        if counter != 15:
             fpw.writelines(l[x] + " ")
             counter += 1
         else:
             counter = 0
-            fpw.writelines("\n")
+            fpw.writelines(l[x] + " " + "\n")
     fpw.writelines(["\n}"])
 
 def atlas(fp, fpw):
@@ -359,22 +359,19 @@ def atlas(fp, fpw):
     atlas_temp = []
 
     while counter < num_atlases:
-        atlas_offset.append("0x" + ''.join(format((fp.tell()), "<X")))
+        atlas_offset.append("0x" + ''.join(format((fp.tell()), "0>8X")))
         texture_id = integer(fp)
         unk = integer(fp)
         width = floating(fp)
         height = floating(fp)
-        atlas_list.append([texture_id, unk, width, height])
-        counter += 1
-
-    for x in range(len(atlas_list)):
-        atlas_temp.append(["\n\tAtlas # 0x", format(x, "0>4X"), "; Offset: ", atlas_offset[x]])
+        atlas_temp.append(["\n\tAtlas # 0x", format(counter, "0>4X"), "; Offset: ", atlas_offset[counter]])
         atlas_temp.append(["\n\t{\n\t\tTexture ID:  ", str(format(texture_id, "0>2d")), ","])
         atlas_temp.append(["\n\t\tUnk: 0x", format(unk, "0>8X"), ","])
         atlas_temp.append(["\n\t\tWidth:  ", format(width[0], ">7.0f"), ","])
         atlas_temp.append(["\n\t\tHeight: ", format(height[0], ">7.0f")])
-        atlas_list[x] = (atlas_temp)
+        atlas_list.append(atlas_temp)
         atlas_temp = []
+        counter += 1
     return atlas_list
 
 def atlas_write(l, offset, fpw):
@@ -385,14 +382,14 @@ def atlas_write(l, offset, fpw):
         ref_str_open = ''
         ref_str_close = ''
 
-    fpw.writelines(["\n\nAtlases # offset: 0x", str(offset), "\n{"])
+    fpw.writelines(["\n\nAtlases # offset: 0x", str(format(offset, "0>8X")), "\n{"])
     for x in range(len(l)):
         for item in range(5):
             fpw.writelines(l[x][item])
         if x != len(l) - 1:
             fpw.writelines(["\n\t}\n"])
         else:
-            fpw.writelines(["\n\t}\n}"])
+            fpw.writelines(["\n\t}\n\n}"])
 
 def unknowns(fp, fpw, type):
     dword_length = integer(fp)
@@ -409,7 +406,7 @@ def unknowns(fp, fpw, type):
     return type_list
 
 def unknowns_write(l, offset, fpw, type):
-    fpw.writelines(["\n\nUnk ", type, " # offset: 0x", str(offset), "\n{"])
+    fpw.writelines(["\n\nUnk ", type, " # offset: 0x", str(format(offset, "0>8X")), "\n{"])
     for x in range(len(l)):
         fpw.writelines(l[x])
     fpw.writelines(["\n}"])
@@ -444,7 +441,7 @@ def properties_write(l, offset, fpw):
 def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     dword_length = integer(fp)
     defines_list = []
-    defines_temp = ["\n\nDefines  # offset: 0x", str(format(offset, "0<8X")), "\n{"]
+    defines_temp = ["\n\nDefines  # offset: 0x", str(format(offset, "0>8X")), "\n{"]
 
     num_shapes = integer(fp)
     unk0 = integer(fp)
@@ -458,7 +455,7 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_temp.append(["\n\tNum shapes: ", str(num_shapes)])
     defines_temp.append(["\n\tunk0: 0x", format(unk0, "0>8X")])
     defines_temp.append(["\n\tnum_sprites: ", str(num_sprites)])
-    defines_temp.append(["\n\tunk1: ", format(unk1, "0>8X")])
+    defines_temp.append(["\n\tunk1: 0x", format(unk1, "0>8X")])
     defines_temp.append(["\n\tnum_texts: ", str(num_texts)])
     defines_temp.append(["\n\tunk2: 0x", format(unk2, "0>8X")])
     defines_temp.append(["\n\tunk3: 0x", format(unk3, "0>8X")])
@@ -570,7 +567,8 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     fill_type = short(fp)
     num_verts = short(fp)
     num_indices = integer(fp)
-
+    
+    print(atlas_list)
     atlas_list[atlas_id][0].append("\n\t# ref in (Shape, Graphic): (" + str(shape_id) + ", " + str(x) + ")")
 
     graphic_temp.append(["\n\t\t\t\t\tAtlas ID: ", str(atlas_id)])
@@ -585,8 +583,8 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
         u = floating(fp)
         v = floating(fp)
 
-        single_vert.append(["Pos X: ", float(format(pos_x[0], "4.2f")), "Pos Y: ", float(format(pos_y[0], "4.2f"))])
-        single_vert.append(["U: ", float(format(u[0], "4.2f")), "V: ", float(format(v[0], "4.2f"))])
+        single_vert.append(["Pos X: ", float(format(pos_x[0], ".10F")), "Pos Y: ", float(format(pos_y[0], ".10F"))])
+        single_vert.append(["U: ", float(format(u[0], ".10F")), "V: ", float(format(v[0], ".10F"))])
         graphic_temp.append(["\n\t\t\t\t\t", str(single_vert)])
         vert_list.append(single_vert)
 
@@ -655,7 +653,7 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
     
     return sprite_list
 
-def frame_label(fp, fpw, symbol_list, count, offset, sprite_num):
+def frame_label(fp, fpw, symbol_list, count, offset, item_num):
     dword_length = integer(fp)
     
     frame_list = ["\n\t\t\t\tFrame Label", str(count), "# offset: 0x", str(format(offset, "0>8X"))]
@@ -667,13 +665,13 @@ def frame_label(fp, fpw, symbol_list, count, offset, sprite_num):
     frame_list.append([" Name: ", str(format(name_id, "0>8X")), " Start Frame: ", str(start_frame), "Unk 0: ", str(unk0)])
     return frame_list
 
-def show_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
+def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
     dword_length = integer(fp)
     unk0 = integer(fp)
     num_items = integer(fp)
 
     frame_list = []
-    frame_temp = ["\n\t\t\t\tShow frame", str(count), " # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
+    frame_temp = ["\n\t\t\t\tShow frame ", str(count), " # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
 
     frame_temp.append(["\n\t\t\t\t\tUnk0: 0x", format(unk0, "0>8X")])
     frame_temp.append(["\n\t\t\t\t\tnum_items: 0x", format(num_items, "0>8X")])
@@ -689,13 +687,13 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000004'):
-            frame_list.append(place_object(fp, fpw, place_obj_counter, "Show Frame", symbol_list, positions_list, count, offset, sprite_num))
+            frame_list.append(place_object(fp, fpw, place_obj_counter, "Show Frame", symbol_list, positions_list, count, offset, item_num))
             place_obj_counter += 1
         elif chunk == bytes.fromhex('0000000C'):
-            frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, sprite_num))
+            frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, item_num))
             do_act_counter += 1
         elif chunk == bytes.fromhex('00000005'):
-            frame_list.append(remove_object(fp, fpw, "Show Frame", symbol_list, count, offset, sprite_num))
+            frame_list.append(remove_object(fp, fpw, "Show Frame", symbol_list, count, offset, item_num))
             remove_obj_counter += 1
         else:
             print("something broke at the below address in show frame: \n", format((fp.tell() - 0x4), "0>8X"))
@@ -703,7 +701,7 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
     frame_list.append(["\n\t\t\t\t\t}\n\t\t\t\t}"])
     return frame_list
 
-def key_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
+def key_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
     dword_length = integer(fp)
     unk0 = integer(fp)
     num_items = integer(fp)
@@ -725,13 +723,13 @@ def key_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000004'):
-            frame_list.append(place_object(fp, fpw, place_obj_counter, "Key Frame", symbol_list, positions_list, count, offset, sprite_num))
+            frame_list.append(place_object(fp, fpw, place_obj_counter, "Key Frame", symbol_list, positions_list, count, offset, item_num))
             place_obj_counter += 1
         elif chunk == bytes.fromhex('0000000C'):
-            frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, sprite_num))
+            frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, item_num))
             do_act_counter += 1
         elif chunk == bytes.fromhex('00000005'):
-            frame_list.append(remove_object(fp, fpw, "Key Frame", symbol_list, count, offset, sprite_num))
+            frame_list.append(remove_object(fp, fpw, "Key Frame", symbol_list, count, offset, item_num))
             remove_obj_counter += 1
         else:
             print("Something broke at the below address in key frame: \n", str(format(offset, "0>8X")))
@@ -741,7 +739,7 @@ def key_frame(fp, fpw, symbol_list, count, positions_list, offset, sprite_num):
 
     return frame_list
 
-def do_action(fp, fpw, x, count, offset, sprite_num):
+def do_action(fp, fpw, x, count, offset, item_num):
     dword_length = integer(fp)
 
     action_id = integer(fp)
@@ -749,7 +747,7 @@ def do_action(fp, fpw, x, count, offset, sprite_num):
 
     return(["\n\t\t\t\t\t\tAction ID num: ", str(x), format(action_id, "0>8X"), " unk0: ", format(unk0, "0>8X"), " # offset: 0x", str(format(offset, "0>8X")), "\n"])
 
-def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, sprite_num):
+def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, item_num):
     dword_length = integer(fp)
 
     place_list = ["\n\t\t\t\t\t\tPlace Object ", str(x), "# offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{"]
@@ -782,15 +780,16 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
         if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(sprite_num) + " Place Object: " + str(x))
+            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(item_num) + " Place Object: " + str(x))
     except:
-        print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", sprite_num)
+        print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", item_num)
         chr_str = "Invalid ID"
 
     try:
-        positions_list[position_id] += ("# ref in", frame + ": " + str(count) + " Place Object: " + str(x))
+        positions_list[position_id] += ("\n\t# ref in ", frame + ": " + str(count) + " Place Object: " + str(x))
     except IndexError:
-        print("Invalid position ID found:", position_id, "; " + frame + ":", count, "Sprite:", str(sprite_num))
+        if position_id <= 32768:
+            print("Invalid position ID found:", position_id, "; " + frame + ":", count, "Sprite:", str(item_num))
         pass
 
     place_list.append(["\n\t\t\t\t\t\t\tCharacter ID: ", chr_str, "(0x", str(chr_id), ")"])
@@ -846,7 +845,7 @@ def color_matrix(fp, fpw, offset):
 
     return type_list
 
-def remove_object(fp, fpw, frame, symbol_list, count, offset, sprite_num):
+def remove_object(fp, fpw, frame, symbol_list, count, offset, item_num):
     dword_length = integer(fp)
     unk0 = integer(fp)
     id = short(fp)
@@ -911,7 +910,7 @@ def dynamic_text(fp, fpw, x, symbol_list, offset):
     text_temp.append(["\n\t\t\tunk 5: ", format(unk5, "0>8X")])
     text_temp.append(["\n\t\t\tunk 6: ", format(unk6, "0>8X")])
     text_temp.append(["\n\t\t\tunk 7: ", format(unk7, "0>8X")])
-    text_temp.append(["\n\t\t\tSize: ", str(float(format(size[0], "4.2F")))])
+    text_temp.append(["\n\t\t\tSize: ", str(float(format(size[0], ".10F")))])
     text_temp.append(["\n\t\t\tunk 8: ", format(unk8, "0>8X")])
     text_temp.append(["\n\t\t\tunk 9: ", format(unk9, "0>8X")])
     text_temp.append(["\n\t\t\tunk 10: ", format(unk10, "0>8X")])
