@@ -517,7 +517,7 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
 def shape(fp, fpw, x, symbol_list, atlas_list, offset):
     dword_length = integer(fp)
     shape_list = []
-    shape_temp = ["\n\n\t\tShape ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
+    shape_temp = ["\n\n\t\tShape # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
 
     chr_id = integer(fp)
     unk0 = integer(fp)
@@ -534,10 +534,10 @@ def shape(fp, fpw, x, symbol_list, atlas_list, offset):
         print("Invalid chr_id:", str(chr_id), "found in shape:", str(x))
         chr_str = "Invalid ID"
 
-    shape_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(chr_id), ")"])
-    shape_temp.append(["\n\t\t\tUnk 0: ",format(unk0, "0>8X")])
-    shape_temp.append(["\n\t\t\tBounds ID: ", str(bounds_id)])
-    shape_temp.append(["\n\t\t\tUnk 1: ",format(unk1, "0>8X")])
+    shape_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    shape_temp.append(["\n\t\t\tUnk 0: 0x",format(unk0, "0>8X")])
+    shape_temp.append(["\n\t\t\tBounds ID: ", str(bounds_id)]) # oh
+    shape_temp.append(["\n\t\t\tUnk 1: 0x",format(unk1, "0>8X")])
     shape_temp.append(["\n\t\t\tNum Graphics: ", str(num_graphics)])
     shape_temp.append(["\n\t\t\t{"])
     
@@ -561,18 +561,19 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     vert_list = []
     index_list = []
 
-    graphic_temp = ["\n\t\t\t\tGraphic ", str(x), " # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
+    graphic_temp = ["\n\t\t\t\tGraphic # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
 
     atlas_id = integer(fp)
     fill_type = short(fp)
     num_verts = short(fp)
     num_indices = integer(fp)
-    
-    print(atlas_list)
-    atlas_list[atlas_id][0].append("\n\t# ref in (Shape, Graphic): (" + str(shape_id) + ", " + str(x) + ")")
+    try:
+        atlas_list[atlas_id][0].append("\n\t# ref in (Shape, Graphic): (" + str(shape_id) + ", " + str(x) + ")")
+    except:
+        print("Probably either invalid Atlas reference, or it's external. If you did not do this, ignore it. Details: ID:", atlas_id, "chunk offset:", offset)
 
     graphic_temp.append(["\n\t\t\t\t\tAtlas ID: ", str(atlas_id)])
-    graphic_temp.append(["\n\t\t\t\t\tFill Type: ", format(fill_type, "0>8X")])
+    graphic_temp.append(["\n\t\t\t\t\tFill Type: 0x", format(fill_type, "0>4X")])
     graphic_temp.append(["\n\t\t\t\t\tNum Verts: ", str(num_verts)])
     graphic_temp.append(["\n\t\t\t\t\tNum Indices: ", str(num_indices)])
 
@@ -599,7 +600,7 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
     dword_length = integer(fp)
     
     sprite_list = [] # [0] is the list of sprite items; [1:-1] contains each frame or label; [-1] contains the closing brace
-    sprite_temp = ["\n\t\tSprite: ", str(x), " # offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
+    sprite_temp = ["\n\t\tSprite # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
 
     chr_id = integer(fp)
     unk0 = integer(fp)
@@ -618,7 +619,7 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
         print("Invalid chr_id:", str(chr_id), "found at sprite:", str(x))
         chr_str = "Invalid ID"
 
-    sprite_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(chr_id), ")"])
+    sprite_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
     sprite_temp.append(["\n\t\t\tUnk0: 0x", format(unk0, "0>8X")])
     sprite_temp.append(["\n\t\t\tUnk1: 0x", format(unk1, "0>8X")]) 
     sprite_temp.append(["\n\t\t\tNum_labels: 0x", format(num_labels, "0>8X")])
@@ -649,20 +650,20 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
         else:
             print("something broke at the below address in sprite: \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
-    sprite_list.append(["\n\t\t\t}\n\t\t}"])
+    sprite_list.append(["\n\t\t\t}\n\t\t}\n"])
     
     return sprite_list
 
 def frame_label(fp, fpw, symbol_list, count, offset, item_num):
     dword_length = integer(fp)
     
-    frame_list = ["\n\t\t\t\tFrame Label", str(count), "# offset: 0x", str(format(offset, "0>8X"))]
+    frame_list = ["\n\t\t\t\tFrame Label # ", str(count), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
 
     name_id = integer(fp)
     start_frame = integer(fp)
     unk0 = integer(fp)
 
-    frame_list.append([" Name: ", str(format(name_id, "0>8X")), " Start Frame: ", str(start_frame), "Unk 0: ", str(unk0)])
+    frame_list.append(["\n\t\t\t\t\tName: 0x", str(format(name_id, "0>8X")), "\n\t\t\t\t\tStart Frame: 0x", str(format(start_frame, "0>8X")), "\n\t\t\t\t\tUnk 0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t}"])
     return frame_list
 
 def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
@@ -671,7 +672,7 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
     num_items = integer(fp)
 
     frame_list = []
-    frame_temp = ["\n\t\t\t\tShow frame ", str(count), " # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
+    frame_temp = ["\n\t\t\t\tShow Frame # ", str(count), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
 
     frame_temp.append(["\n\t\t\t\t\tUnk0: 0x", format(unk0, "0>8X")])
     frame_temp.append(["\n\t\t\t\t\tnum_items: 0x", format(num_items, "0>8X")])
@@ -696,8 +697,10 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
             frame_list.append(remove_object(fp, fpw, "Show Frame", symbol_list, count, offset, item_num))
             remove_obj_counter += 1
         else:
-            print("something broke at the below address in show frame: \n", format((fp.tell() - 0x4), "0>8X"))
+            print("something broke at the below address in Show Frame: \n", format((fp.tell() - 0x4), "0>8X"))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
+        if (x + 1) != num_items:
+            frame_list.append(["\n"])
     frame_list.append(["\n\t\t\t\t\t}\n\t\t\t\t}"])
     return frame_list
 
@@ -707,7 +710,7 @@ def key_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
     num_items = integer(fp)
 
     frame_list = [] # [0] is key frame; [1:-1] are items; [-1] is the closer
-    frame_temp = ["\n\t\t\tKey frame", str(count), "# offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
+    frame_temp = ["\n\t\t\tKey Frame # ", str(count), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t{"]
 
     frame_temp.append(["\n\t\t\t\tUnk0: 0x", format(unk0, "0>8X")])
     frame_temp.append(["\n\t\t\t\tnum_items: 0x", format(num_items, "0>8X")])
@@ -732,8 +735,10 @@ def key_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
             frame_list.append(remove_object(fp, fpw, "Key Frame", symbol_list, count, offset, item_num))
             remove_obj_counter += 1
         else:
-            print("Something broke at the below address in key frame: \n", str(format(offset, "0>8X")))
+            print("Something broke at the below address in Key Frame: \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
+        if (x + 1) != num_items:
+            frame_list.append(["\n"])
 
     frame_list.append(["\n\t\t\t\t\t}\n\t\t\t\t}"])
 
@@ -745,12 +750,12 @@ def do_action(fp, fpw, x, count, offset, item_num):
     action_id = integer(fp)
     unk0 = integer(fp)
 
-    return(["\n\t\t\t\t\t\tAction ID num: ", str(x), format(action_id, "0>8X"), " unk0: ", format(unk0, "0>8X"), " # offset: 0x", str(format(offset, "0>8X")), "\n"])
+    return(["\n\t\t\t\t\t\tDo Action # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{", "\n\t\t\t\t\t\t\tAction ID num: 0x", str(format(action_id, "0>8X")), "\n\t\t\t\t\t\t\tunk0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t\t\t}"])
 
 def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, item_num):
     dword_length = integer(fp)
 
-    place_list = ["\n\t\t\t\t\t\tPlace Object ", str(x), "# offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{"]
+    place_list = ["\n\t\t\t\t\t\tPlace Object # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{"]
 
     chr_id = integer(fp)
     placement_id = integer(fp)
@@ -775,7 +780,7 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
     elif place_flag == 2:
         place_type = "Move"
     else:
-        place_type = "Unknown " + str(place_flag)
+        place_type = "Unknown " + format(place_flag, "0>4X")
     try:
         chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
@@ -785,31 +790,22 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", item_num)
         chr_str = "Invalid ID"
 
-    try:
-        positions_list[position_id] += ("\n\t# ref in ", frame + ": " + str(count) + " Place Object: " + str(x))
-    except IndexError:
-        if position_id <= 32768:
-            print("Invalid position ID found:", position_id, "; " + frame + ":", count, "Sprite:", str(item_num))
-        pass
-
-    place_list.append(["\n\t\t\t\t\t\t\tCharacter ID: ", chr_str, "(0x", str(chr_id), ")"])
+    place_list.append(["\n\t\t\t\t\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
     place_list.append(["\n\t\t\t\t\t\t\tPlacement ID: 0x", format(placement_id, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tunk0: 0x", format(unk0, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tName ID: 0x", format(name_id, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tPlace Flag: ", place_type])
-    place_list.append(["\n\t\t\t\t\t\t\tBlend Mode: 0x", format(blend_mode, "0>8X")])
-    place_list.append(["\n\t\t\t\t\t\t\tDepth: 0x", format(depth, "0>8X")])
-    place_list.append(["\n\t\t\t\t\t\t\tunk1: 0x", format(unk1, "0>8X")])
-    place_list.append(["\n\t\t\t\t\t\t\tunk2: 0x", format(unk2, "0>8X")])
-    place_list.append(["\n\t\t\t\t\t\t\tunk3: 0x", format(unk3, "0>8X")])
+    place_list.append(["\n\t\t\t\t\t\t\tBlend Mode: 0x", format(blend_mode, "0>4X")])
+    place_list.append(["\n\t\t\t\t\t\t\tDepth: 0x", format(depth, "0>4X")])
+    place_list.append(["\n\t\t\t\t\t\t\tunk1: 0x", format(unk1, "0>4X")])
+    place_list.append(["\n\t\t\t\t\t\t\tunk2: 0x", format(unk2, "0>4X")])
+    place_list.append(["\n\t\t\t\t\t\t\tunk3: 0x", format(unk3, "0>4X")])
     place_list.append(["\n\t\t\t\t\t\t\tposition_flags: 0x", format(position_flags, "0>4X")])
     place_list.append(["\n\t\t\t\t\t\t\tposition_id: 0x", format(position_id, "0>4X")])
     place_list.append(["\n\t\t\t\t\t\t\tcolor_mult_id: 0x", format(color_mult_id, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tcolor_add_id: 0x", format(color_add_id, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\thas_color_matrix: 0x", format(has_color_matrix, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\thas_add_id: 0x", format(has_unk_f014, "0>8X")])
-
-    place_list.append(["\n\t\t\t\t\t\t}"])
 
     if has_color_matrix != 0:
         offset = fp.tell()
@@ -828,11 +824,13 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         else:
             print("something broke at the below address in place object (f014): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
+    
+    place_list.append(["\n\t\t\t\t\t\t}"])
     return place_list
 
 def color_matrix(fp, fpw, offset):
     dword_length = integer(fp)
-    type_list = ["\n\n\t\t\t\t\t\t\t\tColor_matrix (WIP) # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t\t\t{"]
+    type_list = ["\n\t\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\tColor_matrix (WIP) # offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t\t\t{"]
 
     if dword_length == 1:
         unk = integer(fp)
@@ -841,7 +839,7 @@ def color_matrix(fp, fpw, offset):
         for x in range(dword_length):
             unk = integer(fp)
             type_list.append(["\n\t\t\t\t\t\t\t\t\tunk_", str(x), ": 0x", format(unk, "0>8X")])
-    type_list.append(["\n\t\t\t\t\t\t\t\t}"])
+    type_list.append(["\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}"])
 
     return type_list
 
@@ -851,7 +849,7 @@ def remove_object(fp, fpw, frame, symbol_list, count, offset, item_num):
     id = short(fp)
     unk1 = short(fp)
 
-    remove_list = ["\n\t\t\t\t\t\tRemove object\n\t\t\t\t\t\t\tUnk0: ", str(unk0), " ID: ", str(id), " unk1: ", str(unk1), " # offset: ",  str(format(offset, "0>8X"))]
+    remove_list = ["\n\t\t\t\t\t\tRemove Object # ", str(count), " offset: ",  str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{", "\n\t\t\t\t\t\t\tUnk0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t\t\t\tID: 0x", str(format(id, "0>4X")), "\n\t\t\t\t\t\t\tunk1: 0x", str(format(unk1, "0>4X")), "\n\t\t\t\t\t\t}"]
     return remove_list
 
 def dynamic_text(fp, fpw, x, symbol_list, offset):
@@ -898,23 +896,23 @@ def dynamic_text(fp, fpw, x, symbol_list, offset):
 
     #dynamic_text_list.extend([chr_id, unk0, unk1, stroke_color_id, unk2, unk3, unk4, text_type, unk5, unk6, unk7, size, unk8, unk9, unk10, unk11])
 
-    text_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(chr_id), ")"])
-    text_temp.append(["\n\t\t\tunk 0: ", format(unk0, "0>8X")])
-    text_temp.append(["\n\t\t\tPlaceholder Text ID: ", format(placeholder_text_id, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 1: ", format(unk1, "0>8X")])
-    text_temp.append(["\n\t\t\tStroke Color ID: ", format(stroke_color_id, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 2: ", format(unk2, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 3: ", format(unk3, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 4: ", format(unk4, "0>8X")])
+    text_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    text_temp.append(["\n\t\t\tunk 0: 0x", format(unk0, "0>8X")])
+    text_temp.append(["\n\t\t\tPlaceholder Text ID: 0x", format(placeholder_text_id, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 1: 0x", format(unk1, "0>8X")])
+    text_temp.append(["\n\t\t\tStroke Color ID: 0x", format(stroke_color_id, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 2: 0x", format(unk2, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 3: 0x", format(unk3, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 4: 0x", format(unk4, "0>8X")])
     text_temp.append(["\n\t\t\tText Alignment: ", str(text_type)])
-    text_temp.append(["\n\t\t\tunk 5: ", format(unk5, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 6: ", format(unk6, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 7: ", format(unk7, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 5: 0x", format(unk5, "0>4X")])
+    text_temp.append(["\n\t\t\tunk 6: 0x", format(unk6, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 7: 0x", format(unk7, "0>8X")])
     text_temp.append(["\n\t\t\tSize: ", str(float(format(size[0], ".10F")))])
-    text_temp.append(["\n\t\t\tunk 8: ", format(unk8, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 9: ", format(unk9, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 10: ", format(unk10, "0>8X")])
-    text_temp.append(["\n\t\t\tunk 11: ", format(unk11, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 8: 0x", format(unk8, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 9: 0x", format(unk9, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 10: 0x", format(unk10, "0>8X")])
+    text_temp.append(["\n\t\t\tunk 11: 0x", format(unk11, "0>8X")])
 
     text_temp.append(["\n\t\t}"])
     
