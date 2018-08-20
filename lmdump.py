@@ -525,16 +525,7 @@ def shape(fp, fpw, x, symbol_list, atlas_list, offset):
     unk1 = integer(fp)
     num_graphics = integer(fp)
 
-    try:
-        chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
-        chr_str = chr_str_unformatted[0].strip()
-        if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t# ref in Shape: " + str(x))
-    except:
-        print("Invalid chr_id:", str(chr_id), "found in shape:", str(x))
-        chr_str = "Invalid ID"
-
-    shape_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    shape_temp.append(["\n\t\t\tCharacter ID: 0x", str(format(chr_id, "0>8X"))])
     shape_temp.append(["\n\t\t\tUnk 0: 0x",format(unk0, "0>8X")])
     shape_temp.append(["\n\t\t\tBounds ID: ", str(bounds_id)]) # oh
     shape_temp.append(["\n\t\t\tUnk 1: 0x",format(unk1, "0>8X")])
@@ -610,16 +601,7 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
     num_key_frames = integer(fp)
     unk2 = integer(fp)
 
-    try:
-        chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
-        chr_str = chr_str_unformatted[0].strip()
-        if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(x))
-    except:
-        print("Invalid chr_id:", str(chr_id), "found at sprite:", str(x))
-        chr_str = "Invalid ID"
-
-    sprite_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    sprite_temp.append(["\n\t\t\tCharacter ID: 0x", str(format(chr_id, "0>8X"))])
     sprite_temp.append(["\n\t\t\tUnk0: 0x", format(unk0, "0>8X")])
     sprite_temp.append(["\n\t\t\tUnk1: 0x", format(unk1, "0>8X")]) 
     sprite_temp.append(["\n\t\t\tNum_labels: 0x", format(num_labels, "0>8X")])
@@ -757,7 +739,7 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
 
     place_list = ["\n\t\t\t\t\t\tPlace Object # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{"]
 
-    chr_id = integer(fp)
+    shape_id = integer(fp)
     placement_id = integer(fp)
     unk0 = integer(fp)
     name_id = integer(fp)
@@ -781,16 +763,8 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         place_type = "Move"
     else:
         place_type = "Unknown " + format(place_flag, "0>4X")
-    try:
-        chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
-        chr_str = chr_str_unformatted[0].strip()
-        if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t# ref in Sprite: " + str(item_num) + " Place Object: " + str(x))
-    except:
-        print("Invalid chr_id:", str(chr_id), "found at Place Object:", str(x), "Sprite: ", item_num)
-        chr_str = "Invalid ID"
 
-    place_list.append(["\n\t\t\t\t\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    place_list.append(["\n\t\t\t\t\t\t\tShape ID: ", "0x", str(format(shape_id, "0>8X"))])
     place_list.append(["\n\t\t\t\t\t\t\tPlacement ID: 0x", format(placement_id, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tunk0: 0x", format(unk0, "0>8X")])
     place_list.append(["\n\t\t\t\t\t\t\tName ID: 0x", format(name_id, "0>8X")])
@@ -886,19 +860,19 @@ def dynamic_text(fp, fpw, x, symbol_list, offset):
         text_type = "invalid ID: " + str(text_alignment)
 
     try:
-        chr_str_unformatted = ''.join(symbol_list[chr_id]).split("# 0x")
+        chr_str_unformatted = ''.join(symbol_list[placeholder_text_id]).split("# 0x")
         chr_str = chr_str_unformatted[0].strip()
-        if chr_id > 1:
-            symbol_list[chr_id].append("\n\t\t# ref in Dynamic Text: " + str(x))
+        if placeholder_text_id > 1:
+            symbol_list[placeholder_text_id].append("\n\t\t# ref in Dynamic Text: " + str(x))
     except:
-        print("Invalid chr_id:", str(chr_id), "found at Dynamic Text:", str(x))
+        print("Invalid chr_id:", str(placeholder_text_id), "found at Dynamic Text:", str(x))
         chr_str = "Invalid ID"
 
     #dynamic_text_list.extend([chr_id, unk0, unk1, stroke_color_id, unk2, unk3, unk4, text_type, unk5, unk6, unk7, size, unk8, unk9, unk10, unk11])
 
-    text_temp.append(["\n\t\t\tCharacter ID: ", chr_str, "(0x", str(format(chr_id, "0>8X")), ")"])
+    text_temp.append(["\n\t\t\tCharacter ID: 0x", str(format(chr_id, "0>8X"))])
     text_temp.append(["\n\t\t\tunk 0: 0x", format(unk0, "0>8X")])
-    text_temp.append(["\n\t\t\tPlaceholder Text ID: 0x", format(placeholder_text_id, "0>8X")])
+    text_temp.append(["\n\t\t\tPlaceholder Text ID: ", chr_str, "(0x", format(placeholder_text_id, "0>8X"), ")"])
     text_temp.append(["\n\t\t\tunk 1: 0x", format(unk1, "0>8X")])
     text_temp.append(["\n\t\t\tStroke Color ID: 0x", format(stroke_color_id, "0>8X")])
     text_temp.append(["\n\t\t\tunk 2: 0x", format(unk2, "0>8X")])
