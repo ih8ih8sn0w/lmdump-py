@@ -344,12 +344,12 @@ def defines_chunk(fp, fpw):
     fpw.write(bytes.fromhex('0000FF0000000000'))
     file_len = fpw.tell()
 
-    # fpw.seek(chunk_start + 8)
-    # fpw.write(shape_counter.to_bytes(4, byteorder='big'))
-    # fpw.seek(4, 1)
-    # fpw.write(sprite_counter.to_bytes(4, byteorder='big'))
-    # fpw.seek(4, 1)
-    # fpw.write(texts_counter.to_bytes(4, byteorder='big'))
+    fpw.seek(chunk_start + 8)
+    fpw.write(shape_counter.to_bytes(4, byteorder='big'))
+    fpw.seek(4, 1)
+    fpw.write(sprite_counter.to_bytes(4, byteorder='big'))
+    fpw.seek(4, 1)
+    fpw.write(texts_counter.to_bytes(4, byteorder='big'))
     
     fpw.seek(0, 2)
     fpw.seek(0x1C)
@@ -385,10 +385,10 @@ def shape_chunk(fp, fpw):
             print("Error while parsing graphics in shapes\n", object_line, "Loc:", fp.tell())
             exit()
         object_line = get_line_without_comments(fp)
-    #closed = fpw.tell()
-    #fpw.seek(chunk_start + 0x18)
-    #fpw.write(graphic_count.to_bytes(4, byteorder='big'))
-    #fpw.seek(closed)
+    closed = fpw.tell()
+    fpw.seek(chunk_start + 0x18)
+    fpw.write(graphic_count.to_bytes(4, byteorder='big'))
+    fpw.seek(closed)
     fp.readline() # brackets
 
 def graphic_chunk(fp, fpw):
@@ -465,12 +465,12 @@ def sprite_chunk(fp, fpw):
             print("Error in sprite sub chunk parsing:", sprite_line, "Loc:", fp.tell())
             exit()
         sprite_line = get_line_without_comments(fp)
-    # close_pos = fpw.tell()
-    # fpw.seek(chunk_start + 0x14)
-    # fpw.write(frame_labels_count.to_bytes(4, byteorder='big'))
-    # fpw.write(show_frame_count.to_bytes(4, byteorder='big'))
-    # fpw.write(key_frame_count.to_bytes(4, byteorder='big'))
-    # fpw.seek(close_pos)
+    close_pos = fpw.tell()
+    fpw.seek(chunk_start + 0x14)
+    fpw.write(frame_labels_count.to_bytes(4, byteorder='big'))
+    fpw.write(show_frame_count.to_bytes(4, byteorder='big'))
+    fpw.write(key_frame_count.to_bytes(4, byteorder='big'))
+    fpw.seek(close_pos)
 
 def show_frame_chunk(fp, fpw):
     chunk_start = fpw.tell()
@@ -503,10 +503,10 @@ def show_frame_chunk(fp, fpw):
         frame_line = get_line_without_comments(fp)
     if item_count == 0:
         fp.readline()
-    #close_pos = fpw.tell()
-    #fpw.seek(chunk_start + 0xC)
-    #fpw.write(item_count.to_bytes(4, byteorder='big'))
-    #fpw.seek(close_pos)
+    close_pos = fpw.tell()
+    fpw.seek(chunk_start + 0xC)
+    fpw.write(item_count.to_bytes(4, byteorder='big'))
+    fpw.seek(close_pos)
 
 def key_frame_chunk(fp, fpw):
     chunk_start = fpw.tell()
@@ -537,10 +537,10 @@ def key_frame_chunk(fp, fpw):
         frame_line = get_line_without_comments(fp)
     if item_count == 0:
         fp.readline()
-    # close_pos = fpw.tell()
-    # fpw.seek(chunk_start + 0xC)
-    # fpw.write(item_count.to_bytes(4, byteorder='big'))
-    # fpw.seek(close_pos)
+    close_pos = fpw.tell()
+    fpw.seek(chunk_start + 0xC)
+    fpw.write(item_count.to_bytes(4, byteorder='big'))
+    fpw.seek(close_pos)
 
 def place_object_chunk(fp, fpw): # 00000004
     chunk_start = fpw.tell()
