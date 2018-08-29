@@ -361,10 +361,7 @@ def shape_chunk(fp, fpw):
 
     object_line = get_line_without_comments(fp)
     for x in range(5):
-        if x == 0: # chr_id
-            chr_id = object_line.split("(")
-            fpw.write(hex_to_byte(chr_id[1].strip(")")))
-        elif x == 1 or x == 3:
+        if x == 0 or x == 1 or x == 3:
             object = object_line.split(": ")
             fpw.write(hex_to_byte(object[1]))
         elif x == 2 or x == 4:
@@ -435,10 +432,7 @@ def sprite_chunk(fp, fpw):
     fpw.write(bytes.fromhex('0000002700000000'))
     fp.readline()
     sprite_line = get_line_without_comments(fp)
-    chr_id = sprite_line.split("(")
-    fpw.write(hex_to_byte(chr_id[1].strip(")")))
-    sprite_line = get_line_without_comments(fp)
-    for x in range(6):
+    for x in range(7):
         object = sprite_line.split(": ")
         fpw.write(hex_to_byte(object[1]))
         sprite_line = get_line_without_comments(fp)
@@ -548,13 +542,9 @@ def place_object_chunk(fp, fpw): # 00000004
     fp.readline()
     object_line = get_line_without_comments(fp)
 
-    chr_id = object_line.split("(")
-    fpw.write(hex_to_byte(chr_id[1].strip(")")))
-    object_line = get_line_without_comments(fp)
-
-    for x in range(15):
+    for x in range(16):
         object = object_line.split(": ")
-        if x == 3:
+        if x == 4:
             if object[1] == "Place":
                 fpw.write(bytes.fromhex('0001'))
             elif object[1] == "Move":
@@ -635,14 +625,13 @@ def dynamic_text_chunk(fp, fpw):
     fpw.write(bytes.fromhex('0000002500000000'))
     fp.readline()
     texts_line = get_line_without_comments(fp)
-
-    chr_id = texts_line.split("(")
-    fpw.write(hex_to_byte(chr_id[1].strip(")")))
-    texts_line = get_line_without_comments(fp)
     
-    for x in range(16):
+    for x in range(17):
         object = texts_line.split(": ")
-        if x == 7:
+        if x == 2:
+            chr_id = texts_line.split("(")
+            fpw.write(hex_to_byte(chr_id[1].strip(")")))
+        elif x == 8:
             if object[1] == "left":
                 fpw.write(bytes.fromhex('0000'))
             elif object[1] == "right":
@@ -653,7 +642,7 @@ def dynamic_text_chunk(fp, fpw):
                 print("Invalid text alignment type for texts.:", object[1], "\nWriting value anyways")
                 alignment = object[1].split(": ")
                 fpw.write(bytes.fromhex(alignment[1]))
-        elif x == 11:
+        elif x == 12:
             fpw.write(be_float(object[1]))
         else:
             fpw.write(hex_to_byte(object[1]))
