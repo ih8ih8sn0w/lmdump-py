@@ -463,6 +463,9 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
 
     defines_list.append(defines_temp)
     defines_temp = []
+    
+    shape_obj_count = []
+    
 
     shape_count = 0
     sprite_count = 0
@@ -473,8 +476,10 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('0000F022'):
-            defines_temp.append(shape(fp, fpw, shape_count, symbol_list, atlas_list, offset))
+            shapes_temp, graphic_temp = shape(fp, fpw, shape_count, symbol_list, atlas_list, shape_obj_count, offset)
+            defines_temp.append(shapes_temp)
             shape_count += 1
+            print("Test")
         else:
             print("something broke at the below address in defines (shapes): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
@@ -482,7 +487,7 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_list.append(defines_temp)
     defines_temp = []
     defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
-            
+
     for x in range(num_sprites):
         offset = fp.tell()
         chunk = fp.read(4)
@@ -512,11 +517,13 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_temp = []
 
     defines_list.append(["\n\t}\n}"])
+    print(shape_obj_count)
     return defines_list
 
-def shape(fp, fpw, x, symbol_list, atlas_list, offset):
+def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
     dword_length = integer(fp)
     shape_list = []
+    graphic_list = []
     shape_temp = ["\n\n\t\tShape # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
 
     chr_id = integer(fp)
@@ -538,12 +545,14 @@ def shape(fp, fpw, x, symbol_list, atlas_list, offset):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('0000F024'):
-            shape_list.append(graphic(fp, fpw, z, atlas_list, x, offset))
+            graphic_list.append(graphic(fp, fpw, z, atlas_list, x, offset))
         else:
             print("something broke at the below address in shape: \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
     shape_list.append(["\n\t\t\t}\n\t\t}"])
-    return shape_list
+    shape_list.append(graphic_list)
+    shape_obj_count.append(num_graphics)
+    return shape_list, graphic_list
 
 def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     dword_length = integer(fp)
@@ -586,6 +595,9 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     graphic_temp.append(["\n\t\t\t\t\t", str(index_list), "\n\t\t\t\t}"])
     graphic_list.append(graphic_temp)
     return graphic_list
+
+def shape_processing(fp, fpw, shape_list, graphic_list, shape_obj_count):
+    return 0
 
 def sprite(fp, fpw, x, symbol_list, positions_list, offset):
     dword_length = integer(fp)
