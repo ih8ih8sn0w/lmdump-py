@@ -1,4 +1,4 @@
-import sys, struct
+import sys, struct, time
 file = sys.argv[1]
 
 try:
@@ -8,6 +8,7 @@ except:
     REFS = True
 
 def main():
+    tic = time.clock()
     with open(file, "rb") as fp:
         fp.seek(0)
         if fp.read(3) != b'LMB':
@@ -113,6 +114,9 @@ def main():
                 properties_write(p_list, p_offset, fpw)
 
                 everything_else_write(an_actual_nightmare, fpw)
+    
+    toc = time.clock()
+    print("This finished in: ", toc - tic)
 
 def integer(fp):
     return int.from_bytes(fp.read(4), "big")
@@ -463,9 +467,10 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
 
     defines_list.append(defines_temp)
     defines_temp = []
-    
+    graphic_global_list = []
+    shapes_list = []
+
     shape_obj_count = []
-    
 
     shape_count = 0
     sprite_count = 0
@@ -477,14 +482,15 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
         chunk = fp.read(4)
         if chunk == bytes.fromhex('0000F022'):
             shapes_temp, graphic_temp = shape(fp, fpw, shape_count, symbol_list, atlas_list, shape_obj_count, offset)
-            defines_temp.append(shapes_temp)
+            shapes_list.append(shapes_temp)
+            graphic_global_list.append(graphic_temp)
             shape_count += 1
-            print("Test")
         else:
             print("something broke at the below address in defines (shapes): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
 
     defines_list.append(defines_temp)
+    defines_list.append(shape_processing(shapes_list, graphic_global_list, shape_obj_count))
     defines_temp = []
     defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
 
@@ -498,7 +504,6 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
             print("something broke at the below address in defines (sprites): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
 
-    defines_list.append(defines_temp)
     defines_temp = []
     
     defines_list.append(["\n\t}\n\n\tTexts\n\t{"])
@@ -517,8 +522,19 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_temp = []
 
     defines_list.append(["\n\t}\n}"])
-    print(shape_obj_count)
     return defines_list
+
+def defines_processing(shapes_list, graphic_list, shape_obj_count):
+    shape_processing(shapes_list, graphic_list)
+    sprites_processing(sprites_list)
+    text_processing(text_list)
+    return 0
+
+def shape_processing(shapes_list, graphic_list, shape_obj_count):
+    global_graphic_count = 0
+    for x in range(len(shape_obj_count)):
+        shapes_list[x].insert(-2, graphic_list[shape_obj_count[x]])
+    return shapes_list
 
 def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
     dword_length = integer(fp)
@@ -539,7 +555,7 @@ def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
     shape_temp.append(["\n\t\t\tNum Graphics: ", str(num_graphics)])
     shape_temp.append(["\n\t\t\t{"])
     
-    shape_list.append(shape_temp)
+    shape_list = shape_temp
 
     for z in range(num_graphics):
         offset = fp.tell()
@@ -549,8 +565,8 @@ def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
         else:
             print("something broke at the below address in shape: \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
+    #shape_list.append(graphic_list)
     shape_list.append(["\n\t\t\t}\n\t\t}"])
-    shape_list.append(graphic_list)
     shape_obj_count.append(num_graphics)
     return shape_list, graphic_list
 
@@ -595,9 +611,6 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     graphic_temp.append(["\n\t\t\t\t\t", str(index_list), "\n\t\t\t\t}"])
     graphic_list.append(graphic_temp)
     return graphic_list
-
-def shape_processing(fp, fpw, shape_list, graphic_list, shape_obj_count):
-    return 0
 
 def sprite(fp, fpw, x, symbol_list, positions_list, offset):
     dword_length = integer(fp)
