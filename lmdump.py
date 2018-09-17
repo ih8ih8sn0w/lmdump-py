@@ -466,8 +466,10 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_temp.append(["\n\tunk4: 0x", format(unk4, "0>8X")])
 
     defines_list.append(defines_temp)
-    defines_temp = []
+
     graphic_global_list = []
+    sprites_global_list = []
+    texts_global_list = []
     shapes_list = []
 
     shape_obj_count = []
@@ -489,30 +491,22 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
             print("something broke at the below address in defines (shapes): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
 
-    defines_list.append(shape_processing(shapes_list, graphic_global_list, shape_obj_count))
-    #print(defines_list)
-    defines_temp = []
-    defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
-
     for x in range(num_sprites):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000027'):
-            defines_temp.append(sprite(fp, fpw, sprite_count, symbol_list, positions_list, offset))
+            sprite(fp, fpw, sprite_count, symbol_list, positions_list, sprites_global_list, offset)
             sprite_count += 1
         else:
             print("something broke at the below address in defines (sprites): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
-
-    defines_temp = []
     
-    defines_list.append(["\n\t}\n\n\tTexts\n\t{"])
 
     for x in range(num_texts):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000025'):
-            defines_temp.append(dynamic_text(fp, fpw, text_count, symbol_list, offset))
+            dynamic_text(fp, fpw, text_count, symbol_list, texts_global_list, offset)
             text_count += 1
         else:
             print("something broke at the below address in defines (texts): \n", str(format(offset, "0>8X")))
@@ -521,9 +515,21 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_list.append(defines_temp)
     defines_temp = []
 
-    defines_list.append(["\n\t}\n}"])
+    defines_processing(defines_list, shapes_list, graphic_global_list, shape_obj_count, sprites_global_list, texts_global_list)
+
+
     return defines_list
 
+def defines_processing(defines_list, shapes_list, graphic_global_list, shape_obj_count, sprites_global_list, texts_global_list):
+    defines_list.append(shape_processing(shapes_list, graphic_global_list, shape_obj_count))
+    defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
+
+    defines_list.append(sprites_global_list)
+    defines_list.append(["\n\t}\n\n\tTexts\n\t{"])
+
+    defines_list.append(texts_global_list)
+    defines_list.append(["\n\t}\n}"])
+    
 def shape_processing(shapes_list, graphic_list, shape_obj_count):
     global_graphic_count = 0
     for x in range(len(shape_obj_count)):
@@ -531,6 +537,9 @@ def shape_processing(shapes_list, graphic_list, shape_obj_count):
             shapes_list[x].insert(-2, graphic_list[x][y])
             global_graphic_count += 1
     return shapes_list
+
+def sprite_processing():
+    return 0
 
 def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
     dword_length = integer(fp)
@@ -608,10 +617,10 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     graphic_list.append(graphic_temp)
     return graphic_list
 
-def sprite(fp, fpw, x, symbol_list, positions_list, offset):
+def sprite(fp, fpw, x, symbol_list, positions_list, sprite_list, offset):
     dword_length = integer(fp)
     
-    sprite_list = [] # [0] is the list of sprite items; [1:-1] contains each frame or label; [-1] contains the closing brace
+    # [0] is the list of sprite items; [1:-1] contains each frame or label; [-1] contains the closing brace
     sprite_temp = ["\n\t\tSprite # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
 
     chr_id = integer(fp)
@@ -654,8 +663,6 @@ def sprite(fp, fpw, x, symbol_list, positions_list, offset):
             print("something broke at the below address in sprite: \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
     sprite_list.append(["\n\t\t\t}\n\t\t}\n"])
-    
-    return sprite_list
 
 def frame_label(fp, fpw, symbol_list, count, offset, item_num):
     dword_length = integer(fp)
@@ -847,10 +854,9 @@ def remove_object(fp, fpw, frame, symbol_list, count, offset, item_num):
     remove_list = ["\n\t\t\t\t\t\tRemove Object # ", str(count), " offset: ",  str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{", "\n\t\t\t\t\t\t\tUnk0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t\t\t\tID: 0x", str(format(id, "0>4X")), "\n\t\t\t\t\t\t\tunk1: 0x", str(format(unk1, "0>4X")), "\n\t\t\t\t\t\t}"]
     return remove_list
 
-def dynamic_text(fp, fpw, x, symbol_list, offset):
+def dynamic_text(fp, fpw, x, symbol_list, text_list, offset):
     dword_length = integer(fp)
 
-    text_list = []
     text_temp = ["\n\n\t\tDynamic Text # offset: 0x", str(format(offset, "0>8X")), "\n\t\t{"]
 
     chr_id = integer(fp)
@@ -912,7 +918,6 @@ def dynamic_text(fp, fpw, x, symbol_list, offset):
     text_temp.append(["\n\t\t}"])
     
     text_list.append(text_temp)
-    return text_list
 
 def everything_else_write(l, fpw):
     for el in l:
