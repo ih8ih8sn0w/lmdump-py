@@ -489,8 +489,8 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
             print("something broke at the below address in defines (shapes): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
 
-    defines_list.append(defines_temp)
     defines_list.append(shape_processing(shapes_list, graphic_global_list, shape_obj_count))
+    #print(defines_list)
     defines_temp = []
     defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
 
@@ -524,16 +524,12 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     defines_list.append(["\n\t}\n}"])
     return defines_list
 
-def defines_processing(shapes_list, graphic_list, shape_obj_count):
-    shape_processing(shapes_list, graphic_list)
-    sprites_processing(sprites_list)
-    text_processing(text_list)
-    return 0
-
 def shape_processing(shapes_list, graphic_list, shape_obj_count):
     global_graphic_count = 0
     for x in range(len(shape_obj_count)):
-        shapes_list[x].insert(-2, graphic_list[shape_obj_count[x]])
+        for y in range(shape_obj_count[x]):
+            shapes_list[x].insert(-2, graphic_list[x][y])
+            global_graphic_count += 1
     return shapes_list
 
 def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
