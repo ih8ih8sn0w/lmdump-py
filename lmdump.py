@@ -491,11 +491,13 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
             print("something broke at the below address in defines (shapes): \n", str(format(offset, "0>8X")))
             print(format((int.from_bytes(chunk, "big")), "0>8X"))
 
+    graphic_global_list = graphic_preprocess(graphic_global_list, shape_obj_count)
+
     for x in range(num_sprites):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000027'):
-            sprite(fp, fpw, sprite_count, symbol_list, positions_list, sprites_global_list, offset)
+            sprite(fp, fpw, sprite_count, symbol_list, positions_list, sprites_global_list, graphic_global_list, shape_obj_count, offset)
             sprite_count += 1
         else:
             print("something broke at the below address in defines (sprites): \n", str(format(offset, "0>8X")))
@@ -521,6 +523,7 @@ def defines(fp, fpw, symbol_list, atlas_list, positions_list, offset):
     return defines_list
 
 def defines_processing(defines_list, shapes_list, graphic_global_list, shape_obj_count, sprites_global_list, texts_global_list):
+    graphic_global_list = graphic_postprocess(graphic_global_list, shape_obj_count)
     defines_list.append(shape_processing(shapes_list, graphic_global_list, shape_obj_count))
     defines_list.append(["\n\t}\n\n\tSprites\n\t{"])
 
@@ -529,17 +532,32 @@ def defines_processing(defines_list, shapes_list, graphic_global_list, shape_obj
 
     defines_list.append(texts_global_list)
     defines_list.append(["\n\t}\n}"])
-    
-def shape_processing(shapes_list, graphic_list, shape_obj_count):
-    global_graphic_count = 0
+
+def graphic_preprocess(graphic_list, shape_obj_count):
+    graphic_temp = []
     for x in range(len(shape_obj_count)):
         for y in range(shape_obj_count[x]):
-            shapes_list[x].insert(-2, graphic_list[x][y])
-            global_graphic_count += 1
-    return shapes_list
+            graphic_temp.append(graphic_list[x][y])
+    return graphic_temp
 
-def sprite_processing():
-    return 0
+def graphic_postprocess(graphic_list, shape_obj_count):
+    graphic_temp = []
+    graphic_temp_main = []
+    counter = 0
+    for x in range(len(shape_obj_count)):
+        for y in range(shape_obj_count[x]):
+            graphic_temp.append(graphic_list[counter])
+            counter += 1
+        graphic_temp_main.append(graphic_temp)
+        graphic_temp = []
+    return graphic_temp_main
+    
+def shape_processing(shapes_list, graphic_list, shape_obj_count):
+    for x in range(len(shape_obj_count)):
+        for y in range(shape_obj_count[x]):
+            print(x, y)
+            shapes_list[x].insert(-2, graphic_list[x][y])
+    return shapes_list
 
 def shape(fp, fpw, x, symbol_list, atlas_list, shape_obj_count, offset):
     dword_length = integer(fp)
@@ -617,7 +635,7 @@ def graphic(fp, fpw, x, atlas_list, shape_id, offset):
     graphic_list.append(graphic_temp)
     return graphic_list
 
-def sprite(fp, fpw, x, symbol_list, positions_list, sprite_list, offset):
+def sprite(fp, fpw, x, symbol_list, positions_list, sprite_list, graphic_list, shape_obj_count, offset):
     dword_length = integer(fp)
     
     # [0] is the list of sprite items; [1:-1] contains each frame or label; [-1] contains the closing brace
@@ -651,13 +669,13 @@ def sprite(fp, fpw, x, symbol_list, positions_list, sprite_list, offset):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000001'):
-            sprite_list.append(show_frame(fp, fpw, symbol_list, show_frame_count, positions_list, offset, x))
+            sprite_list.append(show_frame(fp, fpw, symbol_list, show_frame_count, positions_list, graphic_list, shape_obj_count, offset, x))
             show_frame_count += 1
         elif chunk == bytes.fromhex('0000002B'):
             sprite_list.append(frame_label(fp, fpw, symbol_list, frame_label_count, offset, x))
             frame_label_count += 1
         elif chunk == bytes.fromhex('0000F105'):
-            sprite_list.append(key_frame(fp, fpw, symbol_list, key_frame_count, positions_list, offset, x))
+            sprite_list.append(key_frame(fp, fpw, symbol_list, key_frame_count, graphic_list, shape_obj_count, positions_list, offset, x))
             key_frame_count += 1
         else:
             print("something broke at the below address in sprite: \n", str(format(offset, "0>8X")))
@@ -676,7 +694,7 @@ def frame_label(fp, fpw, symbol_list, count, offset, item_num):
     frame_list.append(["\n\t\t\t\t\tName: 0x", str(format(name_id, "0>8X")), "\n\t\t\t\t\tStart Frame: 0x", str(format(start_frame, "0>8X")), "\n\t\t\t\t\tUnk 0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t}"])
     return frame_list
 
-def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
+def show_frame(fp, fpw, symbol_list, count, positions_list, graphic_list, shape_obj_count, offset, item_num):
     dword_length = integer(fp)
     unk0 = integer(fp)
     num_items = integer(fp)
@@ -698,7 +716,7 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000004'):
-            frame_list.append(place_object(fp, fpw, place_obj_counter, "Show Frame", symbol_list, positions_list, count, offset, item_num))
+            frame_list.append(place_object(fp, fpw, place_obj_counter, "Show Frame", symbol_list, positions_list, graphic_list, shape_obj_count, count, offset, item_num))
             place_obj_counter += 1
         elif chunk == bytes.fromhex('0000000C'):
             frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, item_num))
@@ -714,7 +732,7 @@ def show_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
     frame_list.append(["\n\t\t\t\t\t}\n\t\t\t\t}"])
     return frame_list
 
-def key_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
+def key_frame(fp, fpw, symbol_list, count, positions_list, graphic_list, shape_obj_count, offset, item_num):
     dword_length = integer(fp)
     unk0 = integer(fp)
     num_items = integer(fp)
@@ -736,7 +754,7 @@ def key_frame(fp, fpw, symbol_list, count, positions_list, offset, item_num):
         offset = fp.tell()
         chunk = fp.read(4)
         if chunk == bytes.fromhex('00000004'):
-            frame_list.append(place_object(fp, fpw, place_obj_counter, "Key Frame", symbol_list, positions_list, count, offset, item_num))
+            frame_list.append(place_object(fp, fpw, place_obj_counter, "Key Frame", symbol_list, positions_list, graphic_list, shape_obj_count, count, offset, item_num))
             place_obj_counter += 1
         elif chunk == bytes.fromhex('0000000C'):
             frame_list.append(do_action(fp, fpw, do_act_counter, count, offset, item_num))
@@ -762,7 +780,7 @@ def do_action(fp, fpw, x, count, offset, item_num):
 
     return(["\n\t\t\t\t\t\tDo Action # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{", "\n\t\t\t\t\t\t\tAction ID num: 0x", str(format(action_id, "0>8X")), "\n\t\t\t\t\t\t\tunk0: 0x", str(format(unk0, "0>8X")), "\n\t\t\t\t\t\t}"])
 
-def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, item_num):
+def place_object(fp, fpw, x, frame, symbol_list, positions_list, graphic_list, shape_obj_count, count, offset, item_num):
     dword_length = integer(fp)
 
     place_list = ["\n\t\t\t\t\t\tPlace Object # ", str(x), " offset: 0x", str(format(offset, "0>8X")), "\n\t\t\t\t\t\t{"]
@@ -791,6 +809,11 @@ def place_object(fp, fpw, x, frame, symbol_list, positions_list, count, offset, 
         place_type = "Move"
     else:
         place_type = "Unknown " + format(place_flag, "0>4X")
+
+    # try:
+        # graphic_list[shape_id].append("\n\t\t# ref in Place Object: " + str(x))
+    # except:
+        # print("Invalid shape_id:", str(shape_id), "found at Place Object:", str(x))
 
     place_list.append(["\n\t\t\t\t\t\t\tShape ID: ", "0x", str(format(shape_id, "0>8X"))])
     place_list.append(["\n\t\t\t\t\t\t\tPlacement ID: 0x", format(placement_id, "0>8X")])
